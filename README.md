@@ -155,35 +155,3 @@ The training pipeline automatically exports high-resolution plots to `results/`:
 
 ### 1. Intuitive High-Level Explanation
 > *"Standard neural networks keep every weight active, making them heavy and redundant. Post-training pruning cuts small weights after training, but this is a heuristic that requires manual tuning. In this project, I built a neural network that learns to prune itself **during training**. Every weight is paired with a learnable 'gate score'. Applying a sigmoid gives a gate value between 0 and 1. We multiply the weight by its gate during the forward pass and add an $L_1$ penalty on all gate values to the loss function. If a connection isn't actively helping reduce classification loss, gradient descent automatically drives its gate towards zero. We then threshold gates below 0.01 as pruned."*
-
-### 2. Top 10 Interview Questions & Answers
-
-#### Q1: Why use a learnable gate parameter instead of pruning weights directly based on magnitude?
-**Answer:** Magnitude pruning assumes small weights are useless, which is not always true—small weights can be critical for subtle decision boundaries. Learnable gates let backpropagation decide whether a weight is useful based on task performance rather than static magnitude.
-
-#### Q2: Why initialize gate scores to a positive value like 2.5?
-**Answer:** Setting gate score to 2.5 yields $\sigma(2.5) \approx 0.924$. This ensures the model starts with fully active capacity to learn features first, allowing sparsity loss to prune superfluous connections gradually. Initializing at 0 ($\sigma(0)=0.5$) would choke gradient flow from the start.
-
-#### Q3: Why do we use sigmoid on gate scores instead of ReLU or direct clipping?
-**Answer:** Sigmoid is smooth, bounded in $(0, 1)$, and strictly non-negative. Boundedness prevents exploding gate values, while smoothness provides non-zero gradients everywhere for optimization.
-
-#### Q4: How does backpropagation update gate scores?
-**Answer:** By the chain rule, $\frac{\partial \mathcal{L}}{\partial S_{ij}} = \frac{\partial \mathcal{L}_{\text{clf}}}{\partial W_{\text{pruned}}} W_{ij} \sigma'(S_{ij}) + \lambda \sigma'(S_{ij})$. The first term adjusts the gate to improve classification accuracy, while the second term provides constant downward pressure $\lambda$.
-
-#### Q5: What happens mathematically when $\lambda$ is too high or too low?
-**Answer:** If $\lambda$ is too low ($10^{-6}$), classification loss dominates, gates remain near $1.0$, and minimal pruning occurs. If $\lambda$ is too high ($10^{-2}$), sparsity loss overwhelms classification loss, collapsing all gates to $0.0$ and ruining test accuracy.
-
-#### Q6: Why do we set the pruning threshold at 0.01?
-**Answer:** Sigmoid outputs approach 0 asymptotically but never reach exact 0. A threshold of 0.01 identifies connections operating at less than 1% capacity, treating them as pruned for metric calculation.
-
-#### Q7: Does multiplying weights by gates change the parameter count?
-**Answer:** In terms of stored parameters, it doubles the count during training (weight + gate score). However, after training, gates $< 0.01$ are discarded, yielding a sparse weight tensor.
-
-#### Q8: Does this network run faster on standard PyTorch GPUs after pruning?
-**Answer:** Not automatically with dense matrix operations (`F.linear`). Unstructured zeroing reduces operations theoretically, but hardware acceleration requires conversion to sparse matrix formats (e.g. CSR/COO) or structured neuron removal.
-
-#### Q9: What is the difference between $L_1$ weight regularization and $L_1$ gate regularization?
-**Answer:** $L_1$ weight regularization penalizes weight magnitude $|W|$, driving weights towards zero but leaving the network architecture intact. $L_1$ gate regularization explicitly scales signal flow independently of weight magnitude, separating feature importance from feature scale.
-
-#### Q10: How would you extend this to Convolutional Neural Networks (CNNs)?
-**Answer:** Instead of element-wise weight gates, assign one learnable gate score per output channel/kernel in Conv2d layers. Pruning a channel gate to zero removes the entire feature map, enabling true structured speedups on standard GPU hardware.
