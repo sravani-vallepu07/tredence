@@ -1,0 +1,4 @@
+Lambda,Test Accuracy (%),Sparsity Level (%),Total Weights,Pruned Weights,Active Weights
+1e-05,47.43,0.0,1737984,0,1737984
+0.0001,48.32,0.0,1737984,0,1737984
+0.001,48.65,0.0,1737984,0,1737984

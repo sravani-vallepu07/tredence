@@ -1,0 +1,25 @@
+# Python Bytecode & Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Datasets
+data/
+CIFAR-10/
+cifar-10-batches-py/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
